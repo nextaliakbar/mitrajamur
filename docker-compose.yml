@@ -1,0 +1,9 @@
+version: "3.7"
+
+services:
+  mji-ecommerce-fe:
+    container_name: mji-ecommerce-fe
+    image: registry.gitlab.com/gs-technology/mitra-jamur-indonesia/ecommerce-fe
+    restart: always
+    ports:
+      - "3002:3000"

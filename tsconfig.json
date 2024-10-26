@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "baseUrl": "http://localhost:8000/api",
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  // "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "pages/api/product.js"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.tsx",
+    "pages/api/product.js",
+    "features/user/userSlice.ts",
+    "features/auth/authSlice.ts",
+    "features/auth/AuthService.ts",
+    "pages/dashboard/wishlist",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}
