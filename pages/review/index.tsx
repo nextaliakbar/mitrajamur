@@ -19,6 +19,22 @@ export default function index() {
   useEffect(() => {
     dispatch(fetchReviews());
   }, [dispatch]);
+
+  const formatDate = (invoice: string): string => {
+    if (!invoice) return "Tanggal tidak tersedia";
+  const parts = invoice.split('/');
+  if (parts.length < 2) return "Tanggal tidak valid";
+
+  const dateCode = parts[1];
+  if (dateCode.length !== 8) return "Tanggal tidak valid";
+
+  const year = dateCode.slice(0, 4);
+  const month = dateCode.slice(4, 6);
+  const day = dateCode.slice(6, 8);
+
+  return `${day}-${month}-${year}`;
+  };
+
   return (
     <PrivateRoute>
       <div className='black h-screen TextXSmall regular black'>
@@ -36,7 +52,7 @@ export default function index() {
                   className='item shadowLow p-4 rounded-md divide-y'
                   key={index}>
                   <div className='top pb-2 flex justify-between'>
-                    <p>30 Mei 2023</p>
+                    <p>{formatDate(item?.transaction_invoice)}</p>
                     <p className='semiBold text1'>
                       {item?.transaction_invoice}
                     </p>
