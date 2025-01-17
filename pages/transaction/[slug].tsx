@@ -69,13 +69,15 @@ export default function Detail() {
             </p>
             <p className='col-span-1'>Tanggal</p>
             <p className='col-span-2'>
-              : {detailTransaction[0]?.transaction_date}
+              : {dateFormater(detailTransaction[0]?.transaction_date)}
             </p>
             <p className='col-span-1'>Status</p>
             <p className='col-span-2'>
               :{" "}
               <span className='bg4 px-1 py-0.5 rounded-sm text1'>
-                {detailTransaction[0]?.transaction_status}
+                {detailTransaction[0]?.payment_method === 'COD' && detailTransaction[0]?.transaction_status === 'Pending'
+                  ? 'Menunggu Pembayaran di Tempat'
+                  : detailTransaction[0]?.transaction_status}
               </span>
             </p>
           </div>
@@ -120,7 +122,7 @@ export default function Detail() {
                         {product?.product_quantity} x {product?.product_price}
                       </p>
                       <p className='TextSmall semiBold text-end'>
-                        {product?.total_product_price}
+                        {formatter.format(product?.total_product_price)}
                       </p>
                     </div>
                   </div>
@@ -132,28 +134,33 @@ export default function Detail() {
             <div className='grid grid-cols-5 gap-y-1'>
               <p className='col-span-2'>Metode Pembayaran</p>
               <p className='col-span-3'>
-                : {detailTransaction[0]?.payment_method}
+                : {detailTransaction[0]?.payment_method === 'COD' ? 'Cash On Delivery' : detailTransaction[0]?.payment_method}
               </p>
               <p className='col-span-2'>Harga</p>
               <p className='col-span-3'>
-                : {detailTransaction[0]?.total_price}
+                : {formatter.format(detailTransaction[0]?.total_price)}
               </p>
               <p className='col-span-2'>Ongkos Kirim</p>
               <p className='col-span-3'>
-                : {detailTransaction[0]?.courier_cost}
+                : {formatter.format(detailTransaction[0]?.courier_cost)}
               </p>
               <p className='col-span-2'>Total Diskon</p>
               <p className='col-span-3'>
-                : {detailTransaction[0]?.total_discount}
+                : {formatter.format(detailTransaction[0]?.total_discount)}
               </p>
               <p className='col-span-2'>Biaya Layanan</p>
               <p className='col-span-3'>
-                : {detailTransaction[0]?.service_fee}
+                : {formatter.format(detailTransaction[0]?.service_fee)}
               </p>
               <p className='col-span-2'>Total Pembayaran</p>
               <p className='col-span-3'>
-                : {detailTransaction[0]?.grand_total}
+                : {formatter.format(detailTransaction[0]?.grand_total)}
               </p>
+              {detailTransaction[0]?.payment_method === 'COD' && (
+                <p className='col-span-5 text-center text-yellow-500 mt-2'>
+                  <strong>Pembayaran akan dilakukan di lokasi pengiriman.</strong>
+                </p>
+              )}
             </div>
           </div>
 

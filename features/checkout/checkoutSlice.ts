@@ -3,7 +3,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { PayloadAction } from "@reduxjs/toolkit/dist/createAction";
 import axios from "axios";
-import { type } from "os";
 import { toast } from "react-hot-toast";
 
 type Ongkir = {
@@ -158,18 +157,18 @@ type trackingData = {
 };
 
 type InitialState = {
-  [x: string]: any;
   listOngkir: Ongkir[];
   listTransaction: Transaction[];
+  detailTransaction: TransactionDetail[];
   shipMethod: string;
   ongkir: number;
   shipmentService: string;
   notes: string;
   modalDetail: boolean;
-  detailTransaction: TransactionDetail[];
   loading: boolean;
   error: string;
   modalTracking: boolean;
+  paymentMethod: string;  // Menambahkan status untuk metode pembayaran
 };
 
 const initialState: InitialState = {
@@ -184,6 +183,7 @@ const initialState: InitialState = {
   loading: false,
   error: "",
   modalTracking: false,
+  paymentMethod: "",  // Default kosong, bisa diubah saat checkout
 };
 
 const API_URL = "https://simop.mitrajamur.com/api/";
@@ -204,7 +204,6 @@ export const fetchCheckout = createAsyncThunk(
   async (data: {
     shipping_method: string;
     courier: string;
-    // courier_service : string;
     courier_cost: number;
     weight: number;
     total_price: number;
@@ -213,8 +212,8 @@ export const fetchCheckout = createAsyncThunk(
     service_fee: number;
     grand_total: number;
     notes: string;
+    payment_method: string;  // Menambahkan parameter untuk metode pembayaran
   }) => {
-    console.log("data" + data);
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const response = await axios.post(API_URL + "checkout", data, {
@@ -225,7 +224,7 @@ export const fetchCheckout = createAsyncThunk(
     } catch (error: any) {
       toast.error(error.response.data.message);
     }
-  },
+  }
 );
 
 export const fetchTransaction = createAsyncThunk(
@@ -282,6 +281,9 @@ const ongkirSlice = createSlice({
     },
     setModalTracking(state, action: PayloadAction<boolean>) {
       state.modalTracking = action.payload;
+    },
+    setPaymentMethod(state, action: PayloadAction<string>) {  // Action untuk set metode pembayaran
+      state.paymentMethod = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -350,6 +352,7 @@ export const {
   setNotes,
   setModalDetail,
   setModalTracking,
+  setPaymentMethod,  // Action untuk mengatur metode pembayaran
 } = ongkirSlice.actions;
 
 export default ongkirSlice.reducer;

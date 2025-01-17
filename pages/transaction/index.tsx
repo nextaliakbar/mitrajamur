@@ -1,7 +1,7 @@
 /** @format */
 
 import Link from "next/link";
-import { AiOutlineArrowLeft } from "react-icons/ai";
+import { AiOutlineArrowLeft, AiOutlineClockCircle, AiOutlineSync, AiOutlineCar, AiOutlineCheckCircle, AiOutlineCloseCircle } from "react-icons/ai";
 import PrivateRoute from "../../components/PrivateRoute";
 import Image from "next/image";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -13,7 +13,7 @@ import {
 import Review from "./components/Review";
 import { setReviewOrder } from "../../features/product/ProductSlice";
 import { fetchDetailReview } from "../../features/review/reviewSlice";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 
 export default function index() {
   const dispatch = useAppDispatch();
@@ -21,8 +21,7 @@ export default function index() {
   const listTransaction = useAppSelector(
     (state) => state.checkout.listTransaction
   );
-
-  useEffect(() => {}, []);
+  const isLoading = useAppSelector((state) => state.checkout.isLoading);
 
   const dateFormater = (date: string) => {
     const dateFormated = new Date(date);
@@ -52,14 +51,33 @@ export default function index() {
     minimumFractionDigits: 0,
   });
 
+  const handlePayment = (snapToken: string) => {
+    if (confirm("Apakah Anda yakin ingin melakukan pembayaran?")) {
+      (window as any).snap.pay(snapToken, {
+        onSuccess: function (result: any) {
+          toast.success("Pembayaran berhasil!");
+        },
+        onError: function (error: any) {
+          toast.error("Pembayaran gagal. Silakan coba lagi.");
+        },
+      });
+    }
+  };
+
   useEffect(() => {
-    dispatch(fetchTransaction());
+    dispatch(fetchTransaction())
+      .unwrap()
+      .catch((error) => {
+        console.error("Error fetching transactions:", error);
+        toast.error("Gagal memuat daftar transaksi, silakan coba lagi.");
+      });
+
     const snapSrcUrl = "https://app.sandbox.midtrans.com/snap/snap.js";
-    const myMidtransClientKey = "SB-Mid-client-0H--sK_7opBV4J_s"; //change this according to your client-key
+    const myMidtransClientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY; // Gunakan environment variable
 
     const script = document.createElement("script");
     script.src = snapSrcUrl;
-    script.setAttribute("data-client-key", myMidtransClientKey);
+    script.setAttribute("data-client-key", myMidtransClientKey || "");
     script.async = true;
 
     document.body.appendChild(script);
@@ -67,13 +85,13 @@ export default function index() {
     return () => {
       document.body.removeChild(script);
     };
-  }, []);
+  }, [dispatch]);
 
   return (
     <PrivateRoute>
       <div className='black h-screen TextXSmall regular black'>
         <Link
-          href={"/dashboard"}
+          href={'/dashboard'}
           className='topBar fixed z-50 border-b-2 bg-white top-0 right-0 left-0 flex space-x-3.5 py-4 px-8'>
           <AiOutlineArrowLeft className='w-6 h-6' />
           <p className='TextMedium semiBold'>Daftar Transaksi</p>
@@ -82,7 +100,12 @@ export default function index() {
         <Toaster position='bottom-center' reverseOrder={true} />
 
         <div className='items mx-8 mt-20 space-y-4'>
-          {listTransaction.length > 0 &&
+          {isLoading ? (
+            <div className='text-center'>
+              <div className='loader'></div> {/* Atur CSS untuk spinner */}
+              <p className='text-gray-500'>Memuat transaksi...</p>
+            </div>
+          ) : listTransaction.length > 0 ? (
             listTransaction.map((item) => (
               <div
                 className='item shadowLow p-4 rounded-md divide-y'
@@ -90,17 +113,24 @@ export default function index() {
                 <div className='top pb-2 flex justify-between'>
                   <p>{dateFormater(item?.transaction_date)}</p>
                   <p
-                    className={
+                    className={`text-white semiBold px-2 py-0.5 rounded-md ${
                       item?.transaction_status === "Menunggu Pembayaran"
-                        ? "primary2 text1 semiBold px-2 py-0.5 rounded-md"
+                        ? "bg-yellow-500"
                         : item?.transaction_status === "Sedang Diproses"
-                        ? "primary2 text1 semiBold px-2 py-0.5 rounded-md"
+                        ? "bg-blue-500"
                         : item?.transaction_status === "Pengiriman"
-                        ? "BgInfoBg text-white semiBold px-2 py-0.5 rounded-md"
+                        ? "bg-orange-500"
                         : item?.transaction_status === "Selesai"
-                        ? "BgSuccessBg text-white semiBold px-2 py-0.5 rounded-md"
-                        : "red text-white semiBold px-2 py-0.5 rounded-md"
-                    }>
+                        ? "bg-green-500"
+                        : "bg-red-500"
+                    }`}>
+                    <span className='icon mr-2'>
+                      {item?.transaction_status === "Menunggu Pembayaran" && <AiOutlineClockCircle />}
+                      {item?.transaction_status === "Sedang Diproses" && <AiOutlineSync />}
+                      {item?.transaction_status === "Pengiriman" && <AiOutlineCar />}
+                      {item?.transaction_status === "Selesai" && <AiOutlineCheckCircle />}
+                      {item?.transaction_status === "Dibatalkan" && <AiOutlineCloseCircle />}
+                    </span>
                     {item?.transaction_status}
                   </p>
                 </div>
@@ -134,7 +164,7 @@ export default function index() {
                           <div className='grid'>
                             {product?.rating === true ? (
                               <Link
-                                href={"/review"}
+                                href={'/review'}
                                 className='rounded-md primaryBorder py-0.5 px-4 TextXSmall semiBold text1 mt-1 w-fit'>
                                 Lihat Ulasan
                               </Link>
@@ -166,13 +196,7 @@ export default function index() {
                     {item?.transaction_status === "Menunggu Pembayaran" ? (
                       <button
                         className='rounded-md py-2 px-4 primary1 semiBold text-white'
-                        onClick={() => {
-                          (window as any).snap.pay(item?.snap_token, {
-                            onSuccess: function (result: any) {
-                              // console.log("success", result);
-                            },
-                          });
-                        }}>
+                        onClick={() => handlePayment(item?.snap_token)}>
                         Bayar
                       </button>
                     ) : (
@@ -193,7 +217,10 @@ export default function index() {
                   </div>
                 </div>
               </div>
-            ))}
+            ))
+          ) : (
+            <p className='text-center text-gray-500'>Belum ada transaksi.</p>
+          )}
         </div>
         <Review />
       </div>

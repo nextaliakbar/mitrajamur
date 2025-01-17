@@ -1,6 +1,6 @@
 /** @format */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Layout from "../../components/layout";
 import Link from "next/link";
 import { FaTrashAlt } from "react-icons/fa";
@@ -29,16 +29,15 @@ export default function index() {
   );
   const listCart = useAppSelector((state) => state.cart.listCart);
   const summaryCart = useAppSelector((state) => state.cart.summaryCart);
-
   const listOngkir = useAppSelector((state) => state.checkout.listOngkir);
-
   const shipMode = useAppSelector((state) => state.checkout.shipMethod);
-
   const shipmentService = useAppSelector(
     (state) => state.checkout.shipmentService
   );
   const ongkir = useAppSelector((state) => state.checkout.ongkir);
   const notes = useAppSelector((state) => state.checkout.notes);
+
+  const [paymentMethod, setPaymentMethod] = useState("");
 
   useEffect(() => {
     dispatch(fetchSummaryCart());
@@ -51,17 +50,17 @@ export default function index() {
     minimumFractionDigits: 0,
   });
 
-  const handleShipMode = (e: any) => {
+  const handleShipMode = (e) => {
     const selectedShipMode = e.target.value;
 
-    if (selectedShipMode === 'cac') {
+    if (selectedShipMode === "cac") {
       dispatch(setOngkir(0));
     } else {
       dispatch(
-          fetchOngkir({
-            destination: defaultAddress?.subdistrict_id,
-            weight: summaryCart?.total_weight,
-          })
+        fetchOngkir({
+          destination: defaultAddress?.subdistrict_id,
+          weight: summaryCart?.total_weight,
+        })
       );
     }
 
@@ -71,11 +70,16 @@ export default function index() {
   const router = useRouter();
 
   const handleCheckout = () => {
+    if (!paymentMethod) {
+      toast.error("Harap pilih metode pembayaran.");
+      return;
+    }
+
     try {
       const resultAction = dispatch(
         fetchCheckout({
           shipping_method: shipMode,
-          courier: shipMode === 'cac'? "" : shipmentService,
+          courier: shipMode === "cac" ? "" : shipmentService,
           courier_cost: ongkir,
           weight: summaryCart?.total_weight,
           total_price: summaryCart?.total_price,
@@ -88,6 +92,7 @@ export default function index() {
             6000 -
             summaryCart?.total_discount_price,
           notes: notes,
+          payment_method: paymentMethod, // Kirim metode pembayaran
         })
       );
       console.log("resultAction", resultAction);
@@ -105,78 +110,80 @@ export default function index() {
 
   return (
     <PrivateRoute>
-      <div className='hidden md:block'>
+      <div className="hidden md:block">
         <Layout>
-          <section className='mx-auto lg:max-w-6xl px-8 md:px-16 TextSmall regular black'>
-            <div className='TextSmall breadcrumbs'>
+          <section className="mx-auto lg:max-w-6xl px-8 md:px-16 TextSmall regular black">
+            <div className="TextSmall breadcrumbs">
               <ul>
                 <li>
-                  <Link href='/'>
+                  <Link href="/">
                     <strong>Home</strong>
                   </Link>
                 </li>
                 <li>
-                  <Link href='/cart'>
+                  <Link href="/cart">
                     <strong>Keranjang Belanja</strong>
                   </Link>
                 </li>
                 <li>Checkout</li>
               </ul>
             </div>
-            <div className='divider'></div>
-            <div className='grid grid-cols-1 md:grid-cols-7 gap-4 my-5'>
-              <div className='col-span-4'>
-                <div className='divide-y'>
-                  <p className='TextLarge bold m-0 pb-4'>Alamat Pengiriman</p>
+            <div className="divider"></div>
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-4 my-5">
+              <div className="col-span-4">
+                <div className="divide-y">
+                  <p className="TextLarge bold m-0 pb-4">Alamat Pengiriman</p>
                   {defaultAddress === null ? (
                     <>
-                      <div className='actionButton flex flex-col'>
-                        <span className='text-red-500 mb-2'>
+                      <div className="actionButton flex flex-col">
+                        <span className="text-red-500 mb-2">
                           *Alamat belum ditambahkan
                         </span>
-                        <button className='py-2 px-4 btn-custom primary1 text-white bold w-fit rounded-md'>
+                        <button className="py-2 px-4 btn-custom primary1 text-white bold w-fit rounded-md">
                           Tambah Alamat
                         </button>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className='address py-3'>
-                        <p className='TextMedium bold'>
+                      <div className="address py-3">
+                        <p className="TextMedium bold">
                           {defaultAddress?.name} ({defaultAddress?.label})
                         </p>
                         <p>{defaultAddress?.phone}</p>
                         <p>{defaultAddress?.address}</p>
                       </div>
-                      <div className='actionButton py-3'>
-                        <button className='py-1.5 px-4 btn-custom border3 font-bold w-fit rounded-md text-xs'>
+                      <div className="actionButton py-3">
+                        <button className="py-1.5 px-4 btn-custom border3 font-bold w-fit rounded-md text-xs">
                           Pilih Alamat Lainnya
                         </button>
                       </div>
                     </>
                   )}
-                  <div className='shipmentTitle py-3'>
-                    <p className='TextLarge bold'>Metode Pengiriman</p>
+                  <div className="shipmentTitle py-3">
+                    <p className="TextLarge bold">Metode Pengiriman</p>
                   </div>
 
-                  <div className='choseMetode flex flex-col gap-2 py-3'>
+                  <div className="choseMetode flex flex-col gap-2 py-3">
                     <select
-                      className='select select-bordered select-sm w-full'
-                      onChange={handleShipMode}>
-                      <option className='semiBold' disabled selected>
+                      className="select select-bordered select-sm w-full"
+                      onChange={handleShipMode}
+                    >
+                      <option className="semiBold" disabled selected>
                         Pilih Metode Pengiriman
                       </option>
-                      <option value='cod'>Expedisi</option>
-                      <option value='cac'>Ambil ditempat</option>
+                      <option value="cod">Expedisi</option>
+                      <option value="cac">Ambil ditempat</option>
                     </select>
                     {shipMode === "cod" && (
-                      <div className='btn-group flex flex-col gap-y-2'>
+                      <div className="btn-group flex flex-col gap-y-2">
                         {listOngkir?.length > 0 &&
                           listOngkir?.map((item) => (
                             <div
-                              className='btn-group flex flex-col gap-y-2'
-                              key={item?.code}>
-                              <p className='text-sm font-semibold'>
+                              className="btn-group flex flex-col gap-y-2"
+                              key={item?.code}
+                            >
+                              <p className="text-sm font-semibold">
                                 {item?.name}
                               </p>
                               {item?.costs?.length > 0 &&
@@ -196,7 +203,8 @@ export default function index() {
                                           item?.name + " - " + cost?.service
                                         )
                                       );
-                                    }}>
+                                    }}
+                                  >
                                     <p>{cost?.service}</p>
                                     <p>
                                       {formatter.format(cost?.cost[0]?.value)}
@@ -209,70 +217,76 @@ export default function index() {
                     )}
                   </div>
 
-                  <div className='payment'>
-                    <p className='TextLarge bold py-3'>
-                      Catatan untuk penjual{" "}
-                      <span className='text-red-500'>*opsional</span>
+                  <div className="payment">
+                    <p className="TextLarge bold py-3">
+                      Catatan untuk penjual <span className="text-red-500">*opsional</span>
                     </p>
 
-                    <div className='choseMetode flex flex-col gap-2 py-2'>
+                    <div className="choseMetode flex flex-col gap-2 py-2">
                       <textarea
-                        className='textarea h-24 textarea-bordered textarea-sm w-full'
-                        placeholder='Tulis catatan untuk penjual disini'
+                        className="textarea h-24 textarea-bordered textarea-sm w-full"
+                        placeholder="Tulis catatan untuk penjual disini"
                         onChange={(e) => {
                           dispatch(setNotes(e.target.value));
-                        }}></textarea>
+                        }}
+                      ></textarea>
                     </div>
+                  </div>
+
+                  <div className="paymentMethod py-3">
+                    <p className="TextLarge bold">Metode Pembayaran</p>
+                    <select
+                      className="select select-bordered select-sm w-full"
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                    >
+                      <option disabled selected>
+                        Pilih Metode Pembayaran
+                      </option>
+                      <option value="COD">Cash On Delivery (COD)</option>
+                      <option value="Transfer">Transfer Bank</option>
+                    </select>
                   </div>
                 </div>
               </div>
-              <div className='col-span-3 p-6 rounded-xl shadowHight h-fit'>
-                <div className='divide-y'>
-                  <p className='TextLarge semiBold mb-3'>Rincian Belanja</p>
+              <div className="col-span-3 p-6 rounded-xl shadowHight h-fit">
+                <div className="divide-y">
+                  <p className="TextLarge semiBold mb-3">Rincian Belanja</p>
                   {listCart?.length > 0
                     ? listCart?.map((item) => (
-                        <div className='' key={item?.id}>
-                          <div className='flex justify-between items-center py-3'>
-                            <div className='flex space-x-3 items-center'>
-                              <div className='product-img shrink-0 relative rounded-md overflow-hidden h-12 w-12'>
+                        <div className="" key={item?.id}>
+                          <div className="flex justify-between items-center py-3">
+                            <div className="flex space-x-3 items-center">
+                              <div className="product-img shrink-0 relative rounded-md overflow-hidden h-12 w-12">
                                 <Image
                                   src={item?.thumbnail}
-                                  alt='product image'
+                                  alt="product image"
                                   fill
-                                  objectFit='cover'
+                                  objectFit="cover"
                                 />
                               </div>
-                              <div className='desc text-xs'>
-                                <h5 className='TextXSmall mb-2'>
-                                  <strong>{item?.quantity} x</strong>{" "}
-                                  {item?.name}
+                              <div className="desc text-xs">
+                                <h5 className="TextXSmall mb-2">
+                                  <strong>{item?.quantity} x</strong> {item?.name}
                                 </h5>
-                                <div className='text-desc flex items-center gap-x-1'>
-                                  <p className='bg4 Text1 px-1 TextXSmall rounded-sm'>
+                                <div className="text-desc flex items-center gap-x-1">
+                                  <p className="bg4 Text1 px-1 TextXSmall rounded-sm">
                                     {item?.discount}%
                                   </p>
-                                  <p className='line-through TextXSmall'>
+                                  <p className="line-through TextXSmall">
                                     {formatter.format(item?.product_price)}
                                   </p>
-                                  <p className='TextXSmall font-bold'>
-                                    {formatter.format(
-                                      item?.price_after_discount
-                                    )}
+                                  <p className="TextXSmall font-bold">
+                                    {formatter.format(item?.price_after_discount)}
                                   </p>
                                 </div>
                               </div>
                             </div>
-                            {/* <div className='price'>
-                              <p className='text-sm font-semibold'>
-                                {formatter.format(item?.total_price_product)}
-                              </p>
-                            </div> */}
                           </div>
                         </div>
                       ))
                     : null}
-                  <div className='Pricing py-3 TextMedium regular'>
-                    <div className='price flex justify-between'>
+                  <div className="Pricing py-3 TextMedium regular">
+                    <div className="price flex justify-between">
                       <p>Total Harga ({summaryCart?.total_product} Barang)</p>
                       <p>
                         {formatter.format(
@@ -280,35 +294,36 @@ export default function index() {
                         )}
                       </p>
                     </div>
-                    <div className='discount flex justify-between'>
+                    <div className="discount flex justify-between">
                       <p>Total Diskon</p>
                       <p>
                         -{formatter?.format(summaryCart?.total_discount_price)}
                       </p>
                     </div>
-                    <div className='ongkir flex justify-between'>
+                    <div className="ongkir flex justify-between">
                       <p>Total Ongkos Kirim</p>
                       <p>{formatter.format(ongkir)}</p>
                     </div>
-                    <div className='admin flex justify-between'>
-                      <p>Biayan Layanan</p>
+                    <div className="admin flex justify-between">
+                      <p>Biaya Layanan</p>
                       <p>{formatter.format(6000)}</p>
                     </div>
                   </div>
 
-                  <div className='cashAction py-2 text-xl font-bold'>
-                    <div className='PriceTotal flex justify-between mb-2'>
+                  <div className="cashAction py-2 text-xl font-bold">
+                    <div className="PriceTotal flex justify-between mb-2">
                       <p>Total Pembayaran</p>
                       <p>{formatter.format(grand_total)}</p>
                     </div>
-                    <div className='btn-group flex flex-col space-y-2 TextLarge semiBold'>
+                    <div className="btn-group flex flex-col space-y-2 TextLarge semiBold">
                       <button
-                        className='btn-sm flex items-center justify-center primary1 text-white py-2 px-4 rounded-md'
-                        onClick={handleCheckout}>
+                        className="btn-sm flex items-center justify-center primary1 text-white py-2 px-4 rounded-md"
+                        onClick={handleCheckout}
+                      >
                         Proses Pembayaran
                       </button>
 
-                      <button className='btn-sm flex items-center justify-center scale5Border primaryColor py-2 px-4 rounded-md'>
+                      <button className="btn-sm flex items-center justify-center scale5Border primaryColor py-2 px-4 rounded-md">
                         Lanjut Belanja
                       </button>
                     </div>
@@ -319,7 +334,7 @@ export default function index() {
           </section>
         </Layout>
       </div>
-      <div className='block md:hidden'>
+      <div className="block md:hidden">
         <MobileView />
       </div>
     </PrivateRoute>
